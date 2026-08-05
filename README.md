@@ -29,7 +29,7 @@ The title bar shows a star while there are unsaved changes. Files will not updat
 
 ## The preview
 
-I coded this in a delirious hay fever nightmare and have no idea how it works.
+Shows you a preview of the camera and how it moves from the eye. I coded this in a delirium and i dont know how it works internally.
 
 ## Slot numbers
 
