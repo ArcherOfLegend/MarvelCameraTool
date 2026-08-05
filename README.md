@@ -47,7 +47,7 @@ These labels are worked out from the game files rather than documented. Sometime
 
 ## When something goes wrong
 
-I dunno. What you see is what you get. Blender is the most accurate representation of how the camera wil llook.
+I dunno. What you see is what you get. Blender is the most accurate representation of how the camera will look.
 
 ## Building the exe yourself
 ```
