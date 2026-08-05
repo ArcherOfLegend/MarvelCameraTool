@@ -25,14 +25,6 @@ jobs:
             label: Windows
             artifact: Marvel3CameraTool-windows
             binary: dist/Marvel3CameraTool.exe
-          - os: ubuntu-22.04
-            label: Linux
-            artifact: Marvel3CameraTool-linux
-            binary: dist/Marvel3CameraTool
-          - os: macos-13
-            label: macOS
-            artifact: Marvel3CameraTool-macos
-            binary: dist/Marvel3CameraTool
 
     steps:
       - uses: actions/checkout@v4
