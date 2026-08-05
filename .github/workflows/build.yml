@@ -1,0 +1,121 @@
+name: Build
+
+# Builds the tool and uploads the result. Tag a commit and it also cuts a
+# release with the files attached.
+#
+# Everything is pinned on purpose. A new PySide6 or PyInstaller landing
+# upstream should never be able to change or break a build on its own. To move
+# forward, edit the versions in requirements-build.txt and the python-version
+# below, then watch this workflow go green before you rely on it.
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:      # lets you press the button in the Actions tab
+
+permissions:
+  contents: write         # needed to attach files to a release
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            label: Windows
+            artifact: Marvel3CameraTool-windows
+            binary: dist/Marvel3CameraTool.exe
+          - os: ubuntu-22.04
+            label: Linux
+            artifact: Marvel3CameraTool-linux
+            binary: dist/Marvel3CameraTool
+          - os: macos-13
+            label: macOS
+            artifact: Marvel3CameraTool-macos
+            binary: dist/Marvel3CameraTool
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # Qt needs a few X libraries present even to run headless on Linux.
+      - name: Install Linux Qt dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libxkbcommon-x11-0 libxcb-cursor0 \
+            libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libxcb-xinerama0
+
+      - name: Install pinned build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-build.txt
+
+      # Catch a broken import before spending minutes on a build.
+      - name: Check it runs from source
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python m3c_gui.py --selftest
+
+      - name: Build
+        run: python -m PyInstaller --noconfirm --clean m3c_gui.spec
+
+      # The real test. A PyInstaller build that packages cleanly can still die
+      # the moment you launch it, usually on an import the scanner missed.
+      - name: Check the built binary starts
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ${{ matrix.binary }} --selftest
+
+      - name: Report size
+        shell: bash
+        run: ls -lh ${{ matrix.binary }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.binary }}
+          if-no-files-found: error
+          retention-days: 90
+
+  release:
+    name: Publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Lay the files out for upload
+        run: |
+          mkdir -p release
+          cp artifacts/Marvel3CameraTool-windows/Marvel3CameraTool.exe \
+             release/Marvel3CameraTool.exe
+          cp artifacts/Marvel3CameraTool-linux/Marvel3CameraTool \
+             release/Marvel3CameraTool-linux
+          cp artifacts/Marvel3CameraTool-macos/Marvel3CameraTool \
+             release/Marvel3CameraTool-macos
+          ls -lh release
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+          body: |
+            Download `Marvel3CameraTool.exe` and run it. Nothing to install.
+
+            Windows will warn the first time because the file is not signed.
+            Click **More info**, then **Run anyway**.
