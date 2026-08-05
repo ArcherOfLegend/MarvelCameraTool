@@ -1,13 +1,4 @@
 name: Build
-
-# Builds the tool and uploads the result. Tag a commit and it also cuts a
-# release with the files attached.
-#
-# Everything is pinned on purpose. A new PySide6 or PyInstaller landing
-# upstream should never be able to change or break a build on its own. To move
-# forward, edit the versions in requirements-build.txt and the python-version
-# below, then watch this workflow go green before you rely on it.
-
 on:
   push:
     branches: [main, master]
@@ -37,10 +28,6 @@ jobs:
             label: Linux
             artifact: Marvel3CameraTool-linux
             binary: dist/Marvel3CameraTool
-          - os: macos-13
-            label: macOS
-            artifact: Marvel3CameraTool-macos
-            binary: dist/Marvel3CameraTool
 
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +49,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-build.txt
 
-      # Catch a broken import before spending minutes on a build.
       - name: Check it runs from source
         env:
           QT_QPA_PLATFORM: offscreen
@@ -71,8 +57,6 @@ jobs:
       - name: Build
         run: python -m PyInstaller --noconfirm --clean m3c_gui.spec
 
-      # The real test. A PyInstaller build that packages cleanly can still die
-      # the moment you launch it, usually on an import the scanner missed.
       - name: Check the built binary starts
         env:
           QT_QPA_PLATFORM: offscreen
