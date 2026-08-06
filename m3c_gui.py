@@ -12,7 +12,7 @@ import sys
 import traceback
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtGui import QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QDialog, QDialogButtonBox, QFileDialog,
     QFormLayout, QHBoxLayout, QHeaderView, QLabel, QMainWindow, QMessageBox,
@@ -393,16 +393,44 @@ def selftest():
                 return 1
             print("selftest: %s, %d cameras, preview on slot %d"
                   % (os.path.basename(arg), len(w.cameras), w.preview.cam.slot))
+            if icon.isNull():
+                print("selftest: no icon found")
+                return 1
     app.processEvents()
     print("selftest: ok")
     return 0
 
+def app_icon():
+    roots = [getattr(sys, "_MEIPASS", None),
+             os.path.dirname(os.path.abspath(sys.executable)),
+             os.path.dirname(os.path.abspath(__file__))]
+    for base in roots:
+        if not base:
+            continue
+        path = os.path.join(base, "icon.ico")
+        if os.path.exists(path):
+            return QIcon(path)
+    return QIcon()
+
+def claim_taskbar_identity():
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "ArcherOfLegend.Marvel3CameraTool")
+    except Exception:
+        pass
 
 def main():
     if "--selftest" in sys.argv:
         sys.exit(selftest())
+    claim_taskbar_identity()
     app = QApplication(sys.argv)
+    icon = app_icon()
+    app.setWindowIcon(icon)
     w = Window()
+    w.setWindowIcon(icon)
     if len(sys.argv) > 1 and sys.argv[1].lower().endswith(".lmcm"):
         w.load(sys.argv[1])
     w.show()

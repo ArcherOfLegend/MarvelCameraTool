@@ -35,7 +35,7 @@ a = Analysis(
     ["m3c_gui.py"],
     pathex=["."],
     binaries=[],
-    datas=[("README.md", ".")],
+    datas=[("README.md", "."), ("icon.ico", ".")],
     hiddenimports=hidden,
     hookspath=[],
     hooksconfig={},
